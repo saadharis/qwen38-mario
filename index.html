@@ -53,7 +53,8 @@
 const T = 40;                       // tile size (px)
 const VPW = 960, VPH = 540;         // virtual resolution
 const LH = 15;                      // level rows
-const GRAV = 0.5, MAXFALL = 13, JUMPV = 13.2, MAXRUN = 3.7;
+const GRAV = 0.5, MAXFALL = 13, JUMPV = 14.2, MAXRUN = 3.7;
+              /* full jump: ~202px rise, ~210px air distance at full speed */
 
 const cvs = document.getElementById('game');
 const ctx = cvs.getContext('2d');
@@ -65,7 +66,8 @@ function fit(){
 }
 addEventListener('resize', fit); fit();
 
-window.addEventListener('error', e => { (window.__errs = window.__errs || []).push(e.message); });
+window.__errs = [];
+window.addEventListener('error', e => { window.__errs.push(e.message); });
 
 /* ============================ AUDIO ============================ */
 const m2h = n => 440 * Math.pow(2, (n - 69) / 12);
@@ -179,26 +181,23 @@ const LV = {
            [142,'B'],[143,'B'],[144,'?'],[145,'B'],[146,'B'],
            [168,'B'],[169,'B'],[170,'?'],[171,'B'],[172,'B'],
            [182,'?'],[183,'B'],[184,'B'],[185,'B']],
-  r8:  [[28,'C'],[29,'C'],[30,'C'],[55,'C'],[56,'C'],[57,'C'],[143,'C'],[144,'C'],[145,'C']],
-  r3:  [[150,'C'],[151,'C'],[152,'C']],
-  r4:  [[79,'C'],[80,'C'],[81,'C']],
-  r5:  [[78,'B'],[79,'B'],[80,'B'],[81,'B'],[82,'B']],
-  r9E: [[106,'E'],[107,'E'],[108,'E'],[109,'E'],[117,'E'],[118,'E'],[119,'E'],[120,'E']],
-  r10:[[110,'E'],[111,'E'],[112,'E'],[113,'E'],[114,'E'],[115,'E'],[116,'E']],
-  r11:[[110,'E'],[111,'E'],[112,'E'],[113,'E'],[114,'E'],[115,'E'],[116,'E']],
-  r12:[[106,'E'],[107,'E'],[108,'E'],[109,'E'],[117,'E'],[118,'E'],[119,'E'],[120,'E']],
+  r8:  [[111,'C'],[112,'C'],[113,'C'],[114,'C'],[115,'C']],
+  lowCoins: [[95,'C'],[96,'C'],[97,'C'],[98,'C']],
+  pitCoins: [[154,11],[155,11],[156,11]],
+  plateau: [[110,'E'],[111,'E'],[112,'E'],[113,'E'],[114,'E'],[115,'E'],[116,'E']],
+  goalow: { bricks:[[82,'B'],[83,'?'],[84,'B'],[85,'?']] },
   stairs: [
-    {x:106,h:1},{x:107,h:2},{x:108,h:3},{x:109,h:4},
-    {x:117,h:4},{x:118,h:3},{x:119,h:2},{x:120,h:1},
-    {x:200,h:1},{x:201,h:2},{x:202,h:3},{x:203,h:4},{x:204,h:5}
+    {x:106,h:1},{x:107,h:2},{x:108,h:3},{x:109,h:4},{x:110,h:4},{x:111,h:4},{x:112,h:4},
+    {x:113,h:4},{x:114,h:4},{x:115,h:4},{x:116,h:4},{x:117,h:4},{x:118,h:3},
+    {x:119,h:2},{x:120,h:1},
+    {x:200,h:1},{x:201,h:2},{x:202,h:3},{x:203,h:4},{x:204,h:4}
   ],
   pipes: [ {x:41,h:2},{x:49,h:3},{x:65,h:4},{x:129,h:2},{x:137,h:3},
            {x:157,h:4},{x:163,h:3},{x:189,h:2} ],
   holes: [[33,35],[68,70],[100,102],[150,152]],
   spikes: [[124,12],[125,12],[176,12],[177,12],[178,12]],
-  coinsLow:[[196,11],[197,11]],
-  goombas: [[12],[31],[44],[52],[59],[76,360],[95],[97],[112,360],[127],[131],[133],[140],[149],[158],[165],[173],[174],[180],[186],[194]],
-  zzts:  [[51],[72],[148],[191]],
+  goombas: [[25],[31],[44],[52],[59],[63],[76,360],[95],[97],[112,360],[127],[131],[133],[140],[149],[158],[165],[173],[174],[180],[186],[194]],
+  zzts:  [[51],[148],[191]],
   FLAG_X: 207,
   CASTLE_X: 212 * T
 };
@@ -218,15 +217,11 @@ function buildTiles(){
   for (let x = 0; x < LV.W; x++){ set(x,13,'#'); set(x,14,'#'); }
   for (const [a,b] of LV.holes) hole(a,b);
   for (const [x,c] of LV.ground) set(x, 9, c);
-  for (const [x,c] of LV.r8)   set(x, 8, c);
-  for (const [x,c] of LV.r3)   set(x, 3, c);
-  for (const [x,c] of LV.r4)   set(x, 4, c);
-  for (const [x,c] of LV.r5)   set(x, 5, c);
-  for (const [x,c] of LV.r9E)  set(x, 9, c);
-  for (const [x,c] of LV.r10)  set(x,10, c);
-  for (const [x,c] of LV.r11)  set(x,11, c);
-  for (const [x,c] of LV.r12)  set(x,12, c);
-  for (const x of [110,111,112,113,114,115,116]) set(x, 9, 'E');   // plateau top
+  for (const [x,c] of LV.r8)    set(x, 8, c);
+  for (const [x,c] of LV.lowCoins) set(x, 12, c);
+  for (const [x,c] of LV.plateau) set(x, 9, c);
+  for (const [x,y] of LV.pitCoins) set(x, y, 'C');
+  for (const [x,c] of LV.goalow.bricks) set(x, 9, c);
   for (const s of LV.stairs)
     for (let j = 0; j < s.h; j++) set(s.x, 12 - j, 'E');
   for (const p of LV.pipes){
@@ -237,7 +232,6 @@ function buildTiles(){
     }
   }
   for (const [x,y] of LV.spikes) set(x, y, '!');
-  for (const [x,y] of LV.coinsLow) set(x, y, 'C');
   for (let r = 3; r <= 12; r++) set(LV.FLAG_X, r, 'F');
   return g;
 }
@@ -419,8 +413,10 @@ function startFlag(){
   A.setMusic(null); A.flag();
   p.vx = 0; p.vy = 0; p.facing = 1;
   p.x = LV.FLAG_X * T + 20 - p.w;
+  p.y = Math.min(p.y, 13*T - p.h);                          // never below ground
   const foot = p.y + p.h;
-  const bonus = 500 + Math.max(0, Math.round((13*T - foot) / T)) * 100;
+  const climb = Math.max(0, Math.min(10, Math.round((13*T - foot) / T)));  // clamped 0-10
+  const bonus = 500 + climb * 100;
   addScore(bonus, LV.FLAG_X * T + 30, p.y - 6);
 }
 
@@ -444,7 +440,7 @@ addEventListener('keydown', e => {
     case 'Enter':
       if (state === 'menu') startGame();
       else if (state === 'gameover') toMenu();
-      else if (state === 'win') intro();
+      else if (state === 'win') startGame();   // replay = fresh run (score/coins/lives reset)
       break;
     case 'KeyR':
       if (state === 'play' || state === 'pause' || state === 'flag') intro();
@@ -463,10 +459,22 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => {
   const k = keymap[e.code];
   if (!k) return;
-  if (k === 'J' && p.vy < -4) p.vy = -4;       // variable jump height
+  // variable jump height: release cuts the ascent to a floor speed (keeps tap-pops alive)
+  if (k === 'J' && p.vy < -3.2) p.vy = -3.2;
   keys[k] = false;
 });
 addEventListener('blur', () => { if (state === 'play') state = 'pause'; });
+
+/* click / tap: start, resume, or jump */
+cvs.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  A.init(); A.resume();
+  if (state === 'menu') { startGame(); return; }
+  if (state === 'gameover') { toMenu(); return; }
+  if (state === 'win') { startGame(); return; }          // replay = fresh run
+  if (state === 'pause') { state = 'play'; return; }
+  if (state === 'play') p.jbuf = 7;            // tap = jump on mobile
+});
 
 /* touch controls */
 function bindTouch(id, k){
@@ -614,8 +622,8 @@ function updateParticles(){
 }
 
 function updateCam(){
-  const target = p.x - VPW * 0.38;
-  camX += (target - camX) * 0.12;
+  const target = p.x + p.facing * 26 - VPW * 0.38;   // slight facing lookahead
+  camX += (target - camX) * 0.14;
   camX = Math.max(0, Math.min(LV.W*T - VPW, camX));
   if (shake > 0) shake *= 0.86;
   for (const k in BUMPVS) if (--BUMPVS[k] <= 0) delete BUMPVS[k];
@@ -689,6 +697,36 @@ window.__q = () => ({ state, stateT, px: Math.round(p.x), py: Math.round(p.y),
                       muted: A.muted });
 window.__tp = (xt) => { p.x = xt * T; p.y = 13*T - p.h; p.vy = 0; p.vx = 0;
                         camX = Math.max(0, Math.min(LV.W*T - VPW, p.x - 100)); };
+window.__pe = () => enemies.filter(e => !e.dead).map(e => ({ x: Math.round(e.x), y: Math.round(e.y), t: e.type, a: e.active, s: e.state }));
+window.__set = (px, py, vy) => { p.x = px; p.y = py; p.vy = vy || 0; p.vx = 0; p.onGround = false; p.airStomps = 0; };
+window.__en = () => {                       // hover player above a safe live enemy, falling
+  const cands = enemies.filter(e => !e.dead && e.active && e.state !== 'squash'
+    && isSolid(tileAt(e.x + 4, e.y + e.h + 4)) && isSolid(tileAt(e.x + e.w - 4, e.y + e.h + 4)));
+  if (!cands.length) return false;
+  cands.sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x));
+  const e = cands[0];
+  p.x = e.x + (e.w - p.w) / 2; p.y = e.y - 52; p.vy = 3; p.vx = 0;
+  camX = Math.max(0, Math.min(LV.W*T - VPW, p.x - 100));
+  return true;
+};
+window.__groundAbove = (xt, yTop) => { p.x = xt*T; p.y = yTop - p.h; p.vy = 0; p.vx = 0; p.onGround = true;
+  camX = Math.max(0, Math.min(LV.W*T - VPW, p.x - 100)); };
+window.__me = (x, dir) => {                 // reposition nearest living enemy to tile x, walk dir (-1/1)
+  const e = enemies.find(e => !e.dead && e.type === 'goomba' && Math.abs(e.x - x*T) < 60);
+  if (!e) return false;
+  e.x = x*T + 5; e.direction = dir; e.active = true; e.vy = 0;
+  return true;
+};
+window.__lv = n => { lives = n; };
+window.__mus = () => A.music;
+window.__tile = (x, y) => tiles[y] && tiles[y][x];          // probe one tile
+window.__countCoins = () => { let n = 0; for (let y = 0; y < LH; y++) for (let x = 0; x < LV.W; x++) if (tiles[y][x] === 'C') n++; return n; };
+window.__killAll = () => { enemies.forEach(e => { if (!e.dead) { e.state = 'squash'; e.sq = 29; } }); enemies = enemies.filter(e => !e.dead || e.state === 'squash'); };
+window.__mkGoomba = (xt) => {               // spawn one fresh live goomba on the ground at tile xt
+  const w = 30, h = 28;
+  enemies.push({ x: xt*T + 5, y: 13*T - h, w, h, direction: -1, vx: -1, vy: 0,
+                 type: 'goomba', onGround: true, state: 'walk', t: 0, sq: 0, dead: false, active: true });
+};
 
 /* ============================ RENDER ============================ */
 const TEAL='#0fb9a8', TEALD='#0a8a7d', NAVY='#3457c9', NAVYD='#26398f',
@@ -1239,6 +1277,7 @@ function render(){
       [ 'WORLD 1-1 COMPLETE',
         'SCORE   ' + String(score).padStart(6,'0'),
         'COINS   ×' + String(coins).padStart(2,'0'),
+        'TIME    ' + String(Math.ceil(timeLeft)).padStart(3,'0'),
         'BEST    ' + String(best).padStart(6,'0') ],
       'ENTER — PLAY AGAIN', '#b8ffb0');
   }

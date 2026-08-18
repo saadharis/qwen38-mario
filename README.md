@@ -1,36 +1,43 @@
 # QWEN 3.8 MARIO
 
-A fully playable, Mario-style browser platformer. Single-file HTML/CSS/JS — zero
-dependencies, works offline.
+A fully playable, Mario-style browser platformer. Single-file HTML/CSS/JS —
+zero dependencies, works offline.
 
 ## Play
 
 Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari).
+No build step, no server needed.
 
 ## Controls
 
-| Key            | Action                      |
-|----------------|-----------------------------|
-| Arrows / A D   | Run                         |
-| Space / Up / W | Jump (hold = higher)        |
-| P              | Pause / resume              |
-| M              | Mute / unmute               |
-| R              | Restart level               |
-| Enter          | Start game / restart after finish |
+| Key            | Action                            |
+|----------------|-----------------------------------|
+| Arrows / A D   | Run                               |
+| Space / Up / W | Jump (hold = higher, release = pop) |
+| P / Esc        | Pause / resume                    |
+| M              | Mute / unmute                     |
+| R              | Restart level                     |
+| Enter          | Start / replay after finish       |
+| Click / tap    | Start; during play = jump (mobile) |
 
 Touch controls appear automatically on mobile.
 
 ## Features
 
-- Intro menu over a live animated game scene
-- One handcrafted level: pipes, ?-blocks, breakable bricks, spike pits,
-  stone staircases, flag pole, and the end castle
-- Goombas and fast Zz-t enemies with enemy-on-enemy bounce AI
-- Stomping with chain multipliers, coin pops from ?-blocks, 1-UP at 10,000
-- Coyote time, jump buffering, variable jump height
-- Flag slide → auto-walk → COURSE CLEAR → fireworks → stats
-- 3 lives, 300s timer, best score persistence (localStorage)
-- Procedural chiptune (WebAudio) + SFX, no audio assets
-- Parallax background, particles, screen shake
+- Animated title menu, intro card, pause, game over, and COURSE CLEAR screens
+- One hand-tuned 224-tile level: 8 pipes, ?-blocks, breakable bricks, a row-of-4
+  coin arch, stone plateau with stair risers, death pits, spike strips,
+  end staircase, flag pole, and the castle
+- 22 Goombas + 3 fast Zz-t runters with enemy-on-enemy bounce AI
+- Stomping with chain multipliers (100/200/400/800/1600), brick breaks,
+  coin pops, 1-UP every 100 coins
+- Coyote time, jump buffering, variable jump height, skid on turnarounds
+- Flag slide → auto-walk out → fireworks → stats (score, coins, time, best)
+- 3 lives, 300s timer, best score persisted in localStorage
+- Original procedural chiptune (WebAudio) — menu, stage, and game-over songs
+  plus 10 synthesized SFX. No audio assets.
+- Parallax sky/hills, dust & sparkle particles, screen shake, camera lookahead
 
-No build step, no framework — one `index.html`.
+Verified by an automated 60-check browser test suite (headless Chrome):
+full level completion, all hazard/enemy/coin interactions, state machine,
+audio channels, persistence, and a 60-second soak with zero JS errors.
