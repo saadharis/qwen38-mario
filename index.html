@@ -72,22 +72,29 @@ window.addEventListener('error', e => { window.__errs.push(e.message); });
 /* ============================ AUDIO ============================ */
 const m2h = n => 440 * Math.pow(2, (n - 69) / 12);
 const SONGS = {
-  stage: { tempo:132,
-    mel:[64,0,67,0,72,0,67,0, 69,0,67,0,65,0,64,0,
-         64,0,67,0,72,0,76,0, 74,0,71,0,69,0,67,0],
-    bas:[48,0,48,0,43,0,43,0, 45,0,45,0,41,0,41,0,
-         48,0,48,0,43,0,43,0, 45,0,41,0,43,0,0,0] },
-  menu:  { tempo:104,
-    mel:[52,0,0,55,0,0,59,0, 57,0,0,55,0,0,52,0,
-         50,0,0,53,0,0,57,0, 55,0,0,52,0,0,48,0],
-    bas:[36,0,0,0,43,0,0,0, 45,0,0,0,43,0,0,0,
-         38,0,0,0,43,0,0,0, 36,0,0,0,31,0,0,0] },
-  gameover: { tempo:88,
-    mel:[55,0,0,52,0,0,48,0, 45,0,0,48,0,0,50,0,
-         50,0,0,52,0,0,48,0, 45,0,0,43,0,0,41,0],
-    bas:[36,0,0,0,41,0,0,0, 44,0,0,0,43,0,0,0,
-         43,0,0,0,41,0,0,0, 36,0,0,0,36,0,0,0] }
+  /* Super Mario BROS. — WORLD 1-1 OVERWORLD, the ICONIC loop.
+     20 bars x 8 eighths = 160 steps, C major: A A B B C.
+     groove = the step where kick/snare/hat join (bar 9, like the original). */
+  stage: { tempo:176, groove:72,
+    mel:[
+           72, 0, 76, 0, 79, 0, 84, 0, 77, 84, 81, 79, 0, 0, 0, 0,   72, 0, 76, 0, 79, 0, 84, 0, 79, 74, 77, 76, 0, 0, 0, 0,
+           72, 0, 76, 0, 79, 0, 84, 0, 77, 84, 81, 79, 0, 0, 0, 0,   72, 0, 76, 0, 79, 0, 84, 0, 79, 74, 77, 76, 0, 0, 0, 0,
+           76, 0, 74, 0, 72, 0, 71, 0, 69, 67, 65, 67, 0, 0, 0, 0,   77, 0, 76, 0, 74, 0, 72, 0, 71, 69, 67, 65, 0, 0, 0, 0,
+           76, 0, 74, 0, 72, 0, 71, 0, 69, 67, 65, 67, 0, 0, 0, 0,   77, 0, 76, 0, 74, 0, 72, 0, 71, 69, 67, 65, 0, 0, 0, 0,
+           76, 0, 74, 0, 72, 0, 74, 0, 71, 69, 67, 67, 0, 0, 0, 0,   64, 0, 0, 0, 0, 0, 64, 0, 0, 0, 67, 0, 65, 0, 64, 0 ],
+    bas:[
+           36, 36, 36, 36, 36, 36, 36, 36, 43, 50, 41, 49, 43, 50, 41, 49,   36, 36, 36, 36, 36, 36, 36, 36, 43, 50, 41, 49, 43, 50, 41, 49,
+           36, 36, 36, 36, 36, 36, 36, 36, 43, 50, 41, 49, 43, 50, 41, 49,   36, 36, 36, 36, 36, 36, 36, 36, 43, 50, 41, 49, 43, 50, 41, 49,
+           43, 43, 43, 43, 40, 47, 40, 47, 43, 50, 43, 50, 43, 50, 43, 50,   36, 43, 41, 47, 36, 43, 41, 47, 36, 36, 36, 36, 36, 36, 36, 36,
+           43, 43, 43, 43, 40, 47, 40, 47, 43, 50, 43, 50, 43, 50, 43, 50,   43, 43, 43, 43, 40, 47, 40, 47, 43, 50, 43, 50, 43, 50, 43, 50,
+           36, 0, 43, 0, 36, 0, 43, 0, 36, 0, 43, 0, 36, 0, 43, 0,   36, 36, 36, 36, 43, 43, 43, 43, 43, 50, 46, 46, 0, 0, 0, 0 ] },
+  /* The classic game-over song: E5, C5, G4 (held), dropping to an E4. One-shot. */
+  gameover: { tempo:132, once:true, total:7,
+    mel:[64,0, 60,0, 55,0, 52], len:[1,1,1,1,1.5,0.5,2.5],
+    bas:[0,0, 40,0, 0,0, 40] }
 };
+SONGS.menu = SONGS.stage;   /* title screen rides the same famous loop */
+SONGS.clear = null;         /* victory speaks via the clear SFX fanfare, not a song */
 
 const A = {
   ctx:null, muted:false, music:null, step:0, nextT:0,
@@ -114,7 +121,7 @@ const A = {
     o.connect(g); g.connect(dest || this.sfxG);
     o.start(when); o.stop(when + dur + 0.03);
   },
-  noise(dur, vol, hp){
+  noise(dur, vol, hp, dest){
     if (!this.ctx || this.muted) return;
     const n = Math.max(1, Math.floor(this.ctx.sampleRate * dur));
     const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
@@ -123,7 +130,7 @@ const A = {
     const s = this.ctx.createBufferSource(); s.buffer = buf;
     const g = this.ctx.createGain(); g.gain.value = vol;
     const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
-    s.connect(f); f.connect(g); g.connect(this.sfxG); s.start();
+    s.connect(f); f.connect(g); g.connect(dest || this.sfxG); s.start();
   },
   _note(f, dur, type, vol, when){
     if (!this.ctx || this.muted) return;
@@ -139,16 +146,47 @@ const A = {
     this.music = name; this.step = 0;
     if (this.ctx) this.nextT = this.ctx.currentTime + 0.08;
   },
+  /* movement-reactive: sprinting speeds the tempo up and chirps the lead higher
+     (à la 2-1); being airborne ducks the lead so SFX speak. Smoothed. */
+  setSpeed(v, airborne){
+    const r = Math.min(1, Math.abs(v) / MAXRUN);
+    this.mt = { p: 1 + 0.22 * r, l: 1 + 0.035 * r };   // tempo +30% max, pitch ~+2 st max
+    const tgt = airborne ? 0.55 : 1;
+    this.ldrive = this.ldrive == null ? 1 : this.ldrive + (tgt - this.ldrive) * 0.06;
+  },
   schedule(){
     if (!this.ctx) return;
     const S = this.music ? SONGS[this.music] : null;
     if (!S) return;
-    const sd = 60 / S.tempo / 2;                 // eighth-note length
-    while (this.nextT < this.ctx.currentTime + 0.18){
-      const i = this.step % 32;
-      if (S.mel[i]) this._note(m2h(S.mel[i]), sd * 0.85, 'square',   0.16, this.nextT);
-      if (S.bas[i]) this._note(m2h(S.bas[i]), sd * 0.95, 'triangle', 0.26, this.nextT);
-      this.nextT += sd; this.step++;
+    const MT = this.mt || {p:1,l:1};            // tempo + pitch meters from run speed
+    const N = S.mel.length;
+    const d = 60 / S.tempo / 2 / MT.p;          // base eighth length, sprint-scaled
+    const ld = this.ldrive == null ? 1 : this.ldrive;
+    while (this.nextT < this.ctx.currentTime + 0.25){
+      if (S.once){
+        if (this.step >= S.total){               // one-shot finished
+          this.music = null; this.step = 0;
+          if (this.ctx) this.nextT = this.ctx.currentTime + 0.08;
+          return;
+        }
+        const mel = S.mel[this.step], bas = S.bas[this.step];
+        const dur8 = S.len[this.step] || 1;
+        if (mel) this._note(m2h(mel), d * dur8 * 0.97, 'square', 0.17, this.nextT);
+        if (bas) this._note(m2h(bas), d * dur8 * 0.95, 'triangle', 0.26, this.nextT);
+        this.nextT += d * dur8; this.step++;
+        continue;
+      }
+      const idx = this.step % N;                 // looping song
+      const mel = S.mel[idx], bas = S.bas[idx];
+      if (mel) this._note(m2h(mel) * MT.l, d * 0.90, 'square', 0.15 * ld, this.nextT);
+      if (bas) this._note(m2h(bas) * MT.l, d * 0.95, 'triangle', 0.26, this.nextT);
+      if (S.groove && typeof S.groove === 'number' && idx >= S.groove){
+        const off8 = idx % 8;
+        if (off8 === 0 || off8 === 4) this._note(m2h(33), d * 0.85, 'triangle', 0.26, this.nextT);  // kick
+        if (off8 === 2 || off8 === 6) this.noise(0.05, 0.085, 1700, this.musG);                     // snare 2&4
+        if (idx % 2 === 1) this.noise(0.02, 0.028, 7500, this.musG);                               // hats
+      }
+      this.nextT += d; this.step++;
     }
   },
   /* --- sfx presets --- */
@@ -648,6 +686,7 @@ function update(){
       timeLeft -= 1/60;
       if (timeLeft <= 0){ timeLeft = 0; hurt(false); break; }
       updatePlayer();
+      A.setSpeed(state === 'play' ? p.vx : 0, state === 'play' && !p.onGround);  // music follows the legs
       if (state === 'play'){ updateEnemies(); updateParticles(); updateCam(); }
       break;
     case 'flag':
@@ -685,8 +724,7 @@ function update(){
       break;
     case 'gameover':
     case 'win':
-      A.setMusic(state === 'gameover' ? 'gameover' : null);
-      break;
+      break;   // gameover jingle fires once on entry; victory runs silent (clear SFX carries it)
   }
 }
 
@@ -718,7 +756,7 @@ window.__me = (x, dir) => {                 // reposition nearest living enemy t
   return true;
 };
 window.__lv = n => { lives = n; };
-window.__mus = () => A.music;
+window.__mus = () => ({ m: A.music, tempo: A.mt && A.mt.p.toFixed(3), air: A.ldrive == null ? 1 : A.ldrive.toFixed(2) });
 window.__tile = (x, y) => tiles[y] && tiles[y][x];          // probe one tile
 window.__countCoins = () => { let n = 0; for (let y = 0; y < LH; y++) for (let x = 0; x < LV.W; x++) if (tiles[y][x] === 'C') n++; return n; };
 window.__killAll = () => { enemies.forEach(e => { if (!e.dead) { e.state = 'squash'; e.sq = 29; } }); enemies = enemies.filter(e => !e.dead || e.state === 'squash'); };

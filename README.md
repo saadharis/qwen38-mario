@@ -34,8 +34,13 @@ Touch controls appear automatically on mobile.
 - Coyote time, jump buffering, variable jump height, skid on turnarounds
 - Flag slide → auto-walk out → fireworks → stats (score, coins, time, best)
 - 3 lives, 300s timer, best score persisted in localStorage
-- Original procedural chiptune (WebAudio) — menu, stage, and game-over songs
-  plus 10 synthesized SFX. No audio assets.
+- ICONIC Super Mario BROS. 1-1 overworld theme (WebAudio, synthesized — no
+  audio files): the full A-A-B-B-C loop with lead, bass, and a drum groove
+  that joins at bar 9, just like the original. The music is
+  MOVEMENT-REACTIVE: sprinting speeds the tempo up and chirps the lead
+  higher (a la 2-1), and the lead ducks while you're airborne so SFX speak.
+  Title screen uses the same loop; a one-shot classic game-over song
+  (E-C-G dropping to E) plays on losing. Plus 10 synthesized SFX.
 - Parallax sky/hills, dust & sparkle particles, screen shake, camera lookahead
 
 Verified by an automated 60-check browser test suite (headless Chrome):
