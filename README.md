@@ -5,7 +5,10 @@ zero dependencies, works offline.
 
 ## Play
 
-Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari).
+**Live (any device, any network):**
+https://saadharis.github.io/qwen38-mario/
+
+Or open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari).
 No build step, no server needed.
 
 ## Controls
@@ -48,10 +51,11 @@ full level completion, all hazard/enemy/coin interactions, state machine,
 audio channels, persistence, and a 60-second soak with zero JS errors.
 
 ## Sharing with friends
-- **Easiest:** send `QWEN38-MARIO.html` (or the zip) in any chat/email/AirDrop.
+- **Best:** send the live link — `https://saadharis.github.io/qwen38-mario/`.
+  Permanent, works on phones, tablets, PCs, any network. Pushes to `main`
+  auto-redeploy it (GitHub Pages, ~1 min).
+- **Offline:** send `QWEN38-MARIO.html` (or the zip) in any chat/email/AirDrop.
   It's one 55 KB self-contained file — opens offline, no server, no internet needed.
   On iPhone: Files → tap → Share → "Open in Safari". iOS starts audio after the first tap.
-- **Temporary public link:** run `python3 -m http.server 8919` in this folder, then
-  `/tmp/cloudflared tunnel --url http://127.0.0.1:8919` — gives a
-  `https://…trycloudflare.com` URL anyone on the internet can play (tunnel + server
-  must both stay running).
+- **Temp ports/tunnels** (ngrok, cloudflared, LAN IP) work too, but the Pages
+  link above is the one that outlives your machine.
