@@ -46,3 +46,12 @@ Touch controls appear automatically on mobile.
 Verified by an automated 60-check browser test suite (headless Chrome):
 full level completion, all hazard/enemy/coin interactions, state machine,
 audio channels, persistence, and a 60-second soak with zero JS errors.
+
+## Sharing with friends
+- **Easiest:** send `QWEN38-MARIO.html` (or the zip) in any chat/email/AirDrop.
+  It's one 55 KB self-contained file — opens offline, no server, no internet needed.
+  On iPhone: Files → tap → Share → "Open in Safari". iOS starts audio after the first tap.
+- **Temporary public link:** run `python3 -m http.server 8919` in this folder, then
+  `/tmp/cloudflared tunnel --url http://127.0.0.1:8919` — gives a
+  `https://…trycloudflare.com` URL anyone on the internet can play (tunnel + server
+  must both stay running).
